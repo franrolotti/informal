@@ -22,8 +22,8 @@ export default function Home() {
   return (
     <>
       <section className="hero container" id="destacado">
-        <div className="hero-card">
-          <div className="hero-bg" style={{ background: featured.gradient }} />
+        <div className="hero-card reveal">
+          <div className="hero-bg" style={{ background: featured.color }} />
           <div className="hero-grid" />
           <div className="hero-veil" />
           <div className="hero-content">
@@ -51,8 +51,8 @@ export default function Home() {
           </div>
         </div>
         <div className="row">
-          {novedades.map((a) => (
-            <ArticleCard key={a.slug} article={a} />
+          {novedades.map((a, i) => (
+            <ArticleCard key={a.slug} article={a} index={i} />
           ))}
         </div>
       </section>
@@ -70,8 +70,8 @@ export default function Home() {
               <div className="row-title">{cat}</div>
             </div>
             <div className="row">
-              {list.map((a) => (
-                <ArticleCard key={a.slug} article={a} />
+              {list.map((a, i) => (
+                <ArticleCard key={a.slug} article={a} index={i} />
               ))}
             </div>
           </section>

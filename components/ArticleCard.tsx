@@ -8,10 +8,21 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function ArticleCard({ article }: { article: Article }) {
+export default function ArticleCard({
+  article,
+  index = 0,
+}: {
+  article: Article;
+  index?: number;
+}) {
+  const delay = `${Math.min(index, 8) * 70}ms`;
   return (
-    <a className="card" href={`/articulo/${article.slug}`}>
-      <div className="card-cover" style={{ background: article.gradient }}>
+    <a
+      className="card reveal"
+      href={`/articulo/${article.slug}`}
+      style={{ animationDelay: delay }}
+    >
+      <div className="card-cover" style={{ background: article.color }}>
         <span className="tag">{article.category}</span>
         <span className="play" aria-hidden="true">
           ▶

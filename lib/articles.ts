@@ -19,21 +19,21 @@ export interface Article {
   author: string;
   date: string; // ISO
   readingMinutes: number;
-  gradient: string; // CSS gradient para la portada
+  color: string; // color pastel plano para la portada
   featured?: boolean;
   body: Block[];
 }
 
-// Paleta de degradados ochentosa (synthwave / Miami)
+// Paleta pastel plana (colores desaturados, sin degradés)
 const G = {
-  neon: "linear-gradient(135deg, #ff2d95 0%, #8a2be2 100%)",
-  cyan: "linear-gradient(135deg, #12c9c9 0%, #2d7bff 100%)",
-  sunset: "linear-gradient(135deg, #ff2d95 0%, #ff7a3d 55%, #ffca3a 100%)",
-  amber: "linear-gradient(135deg, #ffca3a 0%, #ff7a3d 100%)",
-  grape: "linear-gradient(135deg, #8a2be2 0%, #12c9c9 100%)",
-  lime: "linear-gradient(135deg, #12c9c9 0%, #7bd938 100%)",
-  magenta: "linear-gradient(135deg, #ff2d95 0%, #ff6ec7 100%)",
-  night: "linear-gradient(135deg, #2d1b69 0%, #ff2d95 100%)",
+  rose: "#e7c3cb",
+  mint: "#c6ddca",
+  peach: "#f0d2b6",
+  lavender: "#d3c9e4",
+  butter: "#ecdda9",
+  powder: "#c6d7e2",
+  sage: "#d2d7bd",
+  clay: "#e2c7b6",
 };
 
 const lorem =
@@ -56,7 +56,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-22",
     readingMinutes: 11,
-    gradient: G.sunset,
+    color: G.peach,
     featured: true,
     body: [
       {
@@ -122,7 +122,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-15",
     readingMinutes: 6,
-    gradient: G.grape,
+    color: G.lavender,
     body: [
       {
         type: "p",
@@ -144,7 +144,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-12",
     readingMinutes: 5,
-    gradient: G.magenta,
+    color: G.rose,
     body: placeholder(
       "Neón, sintetizadores y tipografías cromadas: la estética ochentosa no para de reciclarse. ¿Homenaje o falta de ideas nuevas? Spoiler: un poco de las dos."
     ),
@@ -158,7 +158,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-08",
     readingMinutes: 7,
-    gradient: G.cyan,
+    color: G.powder,
     body: placeholder(),
   },
 
@@ -172,7 +172,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-19",
     readingMinutes: 9,
-    gradient: G.neon,
+    color: G.clay,
     body: placeholder(
       "La polarización no es un accidente: es un modelo de negocio político y mediático. Desarmarlo requiere entender los incentivos, no repartir culpas."
     ),
@@ -186,7 +186,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-14",
     readingMinutes: 8,
-    gradient: G.sunset,
+    color: G.peach,
     body: placeholder(),
   },
   {
@@ -198,7 +198,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-06",
     readingMinutes: 6,
-    gradient: G.amber,
+    color: G.butter,
     body: placeholder(),
   },
 
@@ -212,7 +212,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-18",
     readingMinutes: 8,
-    gradient: G.lime,
+    color: G.sage,
     body: [
       {
         type: "p",
@@ -242,7 +242,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-11",
     readingMinutes: 10,
-    gradient: G.cyan,
+    color: G.powder,
     body: placeholder(
       "Dolarizar es una decisión de régimen, no un truco de magia. Renunciás a la política monetaria a cambio de credibilidad importada. Si eso conviene depende de cosas que casi nunca se discuten con calma."
     ),
@@ -256,7 +256,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-04",
     readingMinutes: 7,
-    gradient: G.grape,
+    color: G.lavender,
     body: placeholder(),
   },
 
@@ -270,7 +270,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-17",
     readingMinutes: 9,
-    gradient: G.night,
+    color: G.lavender,
     body: placeholder(
       "Una buena teoría conspirativa es infalsable, halagadora para quien la cree y hostil a la casualidad. En esta serie las tomamos en serio —para desarmarlas con evidencia, no para reírnos del que las cree."
     ),
@@ -284,7 +284,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-10",
     readingMinutes: 6,
-    gradient: G.neon,
+    color: G.clay,
     body: placeholder(),
   },
   {
@@ -296,7 +296,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-02",
     readingMinutes: 5,
-    gradient: G.amber,
+    color: G.butter,
     body: placeholder(),
   },
 
@@ -310,7 +310,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-20",
     readingMinutes: 4,
-    gradient: G.magenta,
+    color: G.rose,
     body: [
       {
         type: "p",
@@ -340,7 +340,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-13",
     readingMinutes: 3,
-    gradient: G.lime,
+    color: G.sage,
     body: placeholder(),
   },
   {
@@ -352,7 +352,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-05",
     readingMinutes: 4,
-    gradient: G.sunset,
+    color: G.peach,
     body: placeholder(),
   },
 ];

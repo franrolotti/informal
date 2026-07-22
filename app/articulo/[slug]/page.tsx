@@ -67,8 +67,8 @@ export default async function ArticlePage({
         ← Volver a Informal
       </a>
 
-      <div className="article-hero">
-        <div className="hero-bg" style={{ background: article.gradient }} />
+      <div className="article-hero reveal">
+        <div className="hero-bg" style={{ background: article.color }} />
         <div className="hero-veil" />
         <div className="article-hero-content">
           <span className="eyebrow">{article.category}</span>
@@ -84,7 +84,7 @@ export default async function ArticlePage({
         </div>
       </div>
 
-      <div className="article-body">
+      <div className="article-body reveal" style={{ animationDelay: "120ms" }}>
         {article.body.map((block, i) => renderBlock(block, i))}
       </div>
     </article>

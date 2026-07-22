@@ -1,5 +1,22 @@
 import type { Metadata } from "next";
+import { Playfair_Display, PT_Serif } from "next/font/google";
 import "./globals.css";
+
+const display = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const body = PT_Serif({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "info.rmal — Análisis, cultura, política y economía",
@@ -22,7 +39,6 @@ function Logo() {
 function Nav() {
   return (
     <header className="nav">
-      <div className="nav-strip" aria-hidden="true" />
       <div className="container nav-inner">
         <Logo />
         <nav className="nav-links">
@@ -64,7 +80,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${display.variable} ${body.variable}`}>
       <body>
         <Nav />
         <main>{children}</main>
