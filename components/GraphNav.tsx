@@ -1,231 +1,447 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useRouter } from "next/navigation";
-import { articles, categories, categoryColor } from "@/lib/articles";
+import {
+  articles,
+  categories,
+  categoryColor,
+  type Category,
+} from "@/lib/articles";
 
-type GNode = {
-  id: string;
-  label: string;
-  color: string;
-  hub?: boolean;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  fx: number | null;
-  fy: number | null;
-};
+/* ---------- Relaciones temáticas entre notas (cruces entre galaxias) ---------- */
+const RELATIONS: [string, string][] = [
+  ["argentina-racismo-mundial-2026", "anatomia-de-una-conspiracion"],
+  ["cultura-del-scroll", "la-grieta-explicada"],
+  ["terraplanismo-como-fenomeno", "cultura-del-scroll"],
+  ["dolarizacion-pros-y-contras", "la-grieta-explicada"],
+  ["el-mito-del-vivir-con-lo-nuestro", "populismo-manual-de-uso"],
+  ["anatomia-de-una-conspiracion", "populismo-manual-de-uso"],
+  ["editorial-por-que-informal", "argentina-racismo-mundial-2026"],
+  ["diario-de-redaccion-01", "inflacion-y-expectativas"],
+];
 
-const W = 900;
-const H = 620;
-const CX = W / 2;
-const CY = H / 2;
+const HUB = "#ece8e1";
 
-// Constantes de la simulación (force-directed, estilo Obsidian)
-const REP = 8600; // repulsión entre nodos
-const REST = 96; // largo de reposo de los enlaces
-const SPRING = 0.021; // fuerza de los enlaces
-const CENTER = 0.006; // atracción al centro
-const DAMP = 0.85; // amortiguación
+/* PRNG determinista para estrellas y cúmulos */
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
-const HUB_COLOR = "#ece8e1";
+const catOf: Record<string, Category> = Object.fromEntries(
+  articles.map((a) => [a.slug, a.category])
+) as Record<string, Category>;
 
-function buildGraph() {
-  const nodes: GNode[] = [];
-  const edges: [string, string][] = [];
-
-  nodes.push({
-    id: "hub",
-    label: "info.rmal",
-    color: HUB_COLOR,
-    hub: true,
-    x: CX,
-    y: CY,
-    vx: 0,
-    vy: 0,
-    fx: null,
-    fy: null,
-  });
-
-  // Posición inicial determinista en círculo (evita saltos raros)
-  articles.forEach((a, i) => {
-    const ang = (i / articles.length) * Math.PI * 2;
-    nodes.push({
-      id: a.slug,
-      label: a.title,
-      color: categoryColor[a.category],
-      x: CX + Math.cos(ang) * 210,
-      y: CY + Math.sin(ang) * 190,
-      vx: 0,
-      vy: 0,
-      fx: null,
-      fy: null,
-    });
-  });
-
-  // Enlaces: cadena dentro de cada categoría + conexión al hub
-  categories.forEach((cat) => {
-    const list = articles.filter((a) => a.category === cat);
-    for (let i = 0; i < list.length - 1; i++) {
-      edges.push([list[i].slug, list[i + 1].slug]);
-    }
-    if (list[0]) edges.push(["hub", list[0].slug]);
-  });
-
-  // Enlaces temáticos cruzados (la red de la desinformación)
-  const cross: [string, string][] = [
-    ["argentina-racismo-mundial-2026", "anatomia-de-una-conspiracion"],
-    ["cultura-del-scroll", "anatomia-de-una-conspiracion"],
-    ["la-grieta-explicada", "terraplanismo-como-fenomeno"],
-    ["cultura-del-scroll", "la-grieta-explicada"],
-    ["editorial-por-que-informal", "argentina-racismo-mundial-2026"],
-    ["inflacion-y-expectativas", "el-mito-del-vivir-con-lo-nuestro"],
-  ];
-  const have = new Set(articles.map((a) => a.slug));
-  cross.forEach(([a, b]) => {
-    if (have.has(a) && have.has(b)) edges.push([a, b]);
-  });
-
-  return { nodes, edges };
+function angleOfCat(cat: Category): number {
+  const i = categories.indexOf(cat);
+  return (i / categories.length) * Math.PI * 2 - Math.PI / 2;
 }
 
 export default function GraphNav() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [, setTick] = useState(0);
-  const [hover, setHover] = useState<string | null>(null);
+  const [view, setView] = useState<"galaxies" | "galaxy">("galaxies");
+  const [active, setActive] = useState<Category>(categories[0]);
+  const [size, setSize] = useState({ w: 900, h: 620 });
 
-  const { nodes, edges } = useMemo(buildGraph, []);
-  const nodesRef = useRef(nodes);
-  const mapRef = useRef<Record<string, GNode>>(
-    Object.fromEntries(nodes.map((n) => [n.id, n]))
-  );
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const drag = useRef<{ id: string; moved: number } | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // Lock scroll + cerrar con Escape
+  /* Campo de estrellas de fondo (normalizado 0..1) */
+  const stars = useMemo(() => {
+    const rnd = mulberry32(1337);
+    return Array.from({ length: 120 }, () => ({
+      x: rnd(),
+      y: rnd(),
+      r: 0.4 + rnd() * 1.5,
+      dur: 2.2 + rnd() * 3.6,
+      delay: rnd() * 4,
+      blue: rnd() > 0.7,
+    }));
+  }, []);
+
+  /* Cúmulo decorativo por galaxia (offsets normalizados -1..1) */
+  const clusters = useMemo(() => {
+    const out: Record<string, { x: number; y: number; r: number }[]> = {};
+    categories.forEach((cat, ci) => {
+      const rnd = mulberry32(99 + ci * 7);
+      const arms = 2;
+      out[cat] = Array.from({ length: 26 }, (_, j) => {
+        const t = j / 26;
+        const arm = (j % arms) * ((Math.PI * 2) / arms);
+        const a = t * Math.PI * 2.4 + arm;
+        const dist = 0.18 + t * 0.82 + (rnd() - 0.5) * 0.15;
+        return {
+          x: Math.cos(a) * dist,
+          y: Math.sin(a) * dist,
+          r: 0.5 + rnd() * 1.4,
+        };
+      });
+    });
+    return out;
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () =>
+      setSize({
+        w: Math.max(320, el.clientWidth),
+        h: Math.max(360, el.clientHeight),
+      });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key !== "Escape") return;
+      if (view === "galaxy") setView("galaxies");
+      else setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, view]);
 
-  // Bucle de simulación
-  useEffect(() => {
-    if (!open) return;
-    let raf = 0;
-    const map = mapRef.current;
-    const step = () => {
-      const ns = nodesRef.current;
-      for (let i = 0; i < ns.length; i++) {
-        for (let j = i + 1; j < ns.length; j++) {
-          let dx = ns[i].x - ns[j].x;
-          let dy = ns[i].y - ns[j].y;
-          const d2 = dx * dx + dy * dy + 0.01;
-          const d = Math.sqrt(d2);
-          const f = REP / d2;
-          const fx = (f * dx) / d;
-          const fy = (f * dy) / d;
-          ns[i].vx += fx;
-          ns[i].vy += fy;
-          ns[j].vx -= fx;
-          ns[j].vy -= fy;
-        }
-      }
-      for (const [a, b] of edges) {
-        const na = map[a];
-        const nb = map[b];
-        if (!na || !nb) continue;
-        let dx = nb.x - na.x;
-        let dy = nb.y - na.y;
-        const d = Math.hypot(dx, dy) || 0.01;
-        const f = SPRING * (d - REST);
-        const fx = (f * dx) / d;
-        const fy = (f * dy) / d;
-        na.vx += fx;
-        na.vy += fy;
-        nb.vx -= fx;
-        nb.vy -= fy;
-      }
-      for (const n of ns) {
-        const c = n.hub ? CENTER * 2.2 : CENTER;
-        n.vx += (CX - n.x) * c;
-        n.vy += (CY - n.y) * c;
-        if (n.fx != null && n.fy != null) {
-          n.x = n.fx;
-          n.y = n.fy;
-          n.vx = 0;
-          n.vy = 0;
-        } else {
-          n.vx *= DAMP;
-          n.vy *= DAMP;
-          n.x += n.vx;
-          n.y += n.vy;
-        }
-      }
-      setTick((t) => (t + 1) % 1000000);
-      raf = requestAnimationFrame(step);
+  const { w, h } = size;
+  const cx = w / 2;
+  const cy = h / 2;
+  const S = Math.min(w, h);
+
+  function enterGalaxy(cat: Category) {
+    setActive(cat);
+    setView("galaxy");
+  }
+
+  /* ---------- Vista mapa: todas las galaxias ---------- */
+  function GalaxiesLayer() {
+    const rx = w * 0.32;
+    const ry = h * 0.31;
+    const coreR = Math.max(7, S * 0.02);
+    const clusterR = Math.max(46, S * 0.12);
+    const labelF = Math.max(13, S * 0.032);
+
+    // conexiones entre galaxias (pares de categorías con relación)
+    const pairs = new Set<string>();
+    RELATIONS.forEach(([a, b]) => {
+      const ca = catOf[a];
+      const cb = catOf[b];
+      if (ca && cb && ca !== cb)
+        pairs.add([ca, cb].sort().join("|"));
+    });
+    const pos = (cat: Category) => {
+      const ang = angleOfCat(cat);
+      return { x: cx + Math.cos(ang) * rx, y: cy + Math.sin(ang) * ry };
     };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [open, edges]);
 
-  function toSvg(clientX: number, clientY: number) {
-    const svg = svgRef.current;
-    if (!svg) return { x: 0, y: 0 };
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-    const p = pt.matrixTransform(ctm.inverse());
-    return { x: p.x, y: p.y };
+    return (
+      <g className="galaxy-enter" key="galaxies">
+        <g stroke="#2b2740" strokeDasharray="2 6">
+          {[...pairs].map((p) => {
+            const [a, b] = p.split("|") as Category[];
+            const pa = pos(a);
+            const pb = pos(b);
+            return (
+              <line
+                key={p}
+                x1={pa.x}
+                y1={pa.y}
+                x2={pb.x}
+                y2={pb.y}
+                strokeWidth={1}
+                opacity={0.7}
+              />
+            );
+          })}
+        </g>
+        {categories.map((cat) => {
+          const { x, y } = pos(cat);
+          const color = categoryColor[cat];
+          const count = articles.filter((a) => a.category === cat).length;
+          const rev = categories.indexOf(cat) % 2 === 0;
+          return (
+            <g
+              key={cat}
+              className="galaxy"
+              transform={`translate(${x} ${y})`}
+              onClick={() => enterGalaxy(cat)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && enterGalaxy(cat)}
+            >
+              <circle r={clusterR} fill="transparent" />
+              <g
+                style={{
+                  transformBox: "fill-box",
+                  transformOrigin: "center",
+                  animation: `${rev ? "gspin" : "gspinRev"} ${
+                    26 + categories.indexOf(cat) * 4
+                  }s linear infinite`,
+                }}
+              >
+                {clusters[cat].map((s, i) => (
+                  <circle
+                    key={i}
+                    cx={s.x * clusterR}
+                    cy={s.y * clusterR}
+                    r={s.r}
+                    fill={color}
+                    opacity={0.6}
+                  />
+                ))}
+              </g>
+              <circle r={coreR * 2} fill={color} opacity={0.18} />
+              <circle
+                r={coreR}
+                fill={color}
+                stroke="#000"
+                strokeWidth={1.5}
+                className="galaxy-core"
+              />
+              <text
+                y={clusterR + labelF}
+                textAnchor="middle"
+                className="galaxy-label"
+                fill={color}
+                style={{ fontSize: labelF }}
+              >
+                {cat}
+              </text>
+              <text
+                y={clusterR + labelF * 2}
+                textAnchor="middle"
+                className="galaxy-count"
+                fill="#7d7691"
+                style={{ fontSize: labelF * 0.5 }}
+              >
+                {count} NOTAS
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    );
   }
 
-  function onPointerDown(e: React.PointerEvent, id: string) {
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-    drag.current = { id, moved: 0 };
-    const n = mapRef.current[id];
-    const { x, y } = toSvg(e.clientX, e.clientY);
-    n.fx = x;
-    n.fy = y;
+  /* ---------- Vista galaxia: notas + portales a otras galaxias ---------- */
+  function GalaxyDetail() {
+    const color = categoryColor[active];
+    const notes = articles.filter((a) => a.category === active);
+    const rx = w * 0.3;
+    const ry = h * 0.28;
+    const noteR = Math.max(8, S * 0.019);
+    const coreR = Math.max(12, S * 0.03);
+    const labelF = Math.max(12, S * 0.028);
+
+    const notePos = (i: number) => {
+      if (notes.length === 1) return { x: cx, y: cy - ry * 0.6 };
+      const ang = (i / notes.length) * Math.PI * 2 - Math.PI / 2;
+      return { x: cx + Math.cos(ang) * rx, y: cy + Math.sin(ang) * ry };
+    };
+
+    // portales: por cada nota, relaciones hacia OTRA categoría
+    type Portal = { from: number; toCat: Category };
+    const portals: Portal[] = [];
+    notes.forEach((n, i) => {
+      RELATIONS.forEach(([a, b]) => {
+        let other: string | null = null;
+        if (a === n.slug) other = b;
+        else if (b === n.slug) other = a;
+        if (!other) return;
+        const oc = catOf[other];
+        if (oc && oc !== active) portals.push({ from: i, toCat: oc });
+      });
+    });
+
+    return (
+      <g className="galaxy-enter" key={active}>
+        {/* líneas nota -> núcleo */}
+        <g stroke={color} opacity={0.35}>
+          {notes.map((n, i) => {
+            const p = notePos(i);
+            return (
+              <line key={n.slug} x1={cx} y1={cy} x2={p.x} y2={p.y} strokeWidth={1} />
+            );
+          })}
+        </g>
+
+        {/* portales hacia otras galaxias (la línea sale de la pantalla) */}
+        {portals.map((pt, idx) => {
+          const p = notePos(pt.from);
+          const ang = angleOfCat(pt.toCat);
+          const far = {
+            x: cx + Math.cos(ang) * (Math.max(w, h) * 1.1),
+            y: cy + Math.sin(ang) * (Math.max(w, h) * 1.1),
+          };
+          const mx = Math.min(w - 8, Math.max(8, cx + Math.cos(ang) * (S * 0.42)));
+          const my = Math.min(h - 26, Math.max(26, cy + Math.sin(ang) * (S * 0.42)));
+          const mark = { x: mx, y: my };
+          const pc = categoryColor[pt.toCat];
+          return (
+            <g
+              key={`p${idx}`}
+              className="portal"
+              onClick={() => enterGalaxy(pt.toCat)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && enterGalaxy(pt.toCat)}
+            >
+              <line
+                x1={p.x}
+                y1={p.y}
+                x2={far.x}
+                y2={far.y}
+                stroke={pc}
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                opacity={0.6}
+              />
+              <circle cx={mark.x} cy={mark.y} r={noteR * 1.5} fill="transparent" />
+              <circle
+                cx={mark.x}
+                cy={mark.y}
+                r={Math.max(5, noteR * 0.6)}
+                fill={pc}
+                className="portal-dot"
+              />
+              {(() => {
+                const c = Math.cos(ang);
+                const anchor =
+                  c > 0.3 ? "end" : c < -0.3 ? "start" : "middle";
+                const lx = anchor === "end" ? mx - 10 : anchor === "start" ? mx + 10 : mx;
+                const ly = Math.min(h - 8, Math.max(16, my - noteR * 1.3));
+                return (
+                  <text
+                    x={lx}
+                    y={ly}
+                    textAnchor={anchor}
+                    className="portal-label"
+                    fill={pc}
+                    style={{ fontSize: labelF * 0.82 }}
+                  >
+                    ↦ {pt.toCat}
+                  </text>
+                );
+              })()}
+            </g>
+          );
+        })}
+
+        {/* núcleo de la galaxia */}
+        <circle cx={cx} cy={cy} r={coreR * 2.4} fill={color} opacity={0.14} />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={coreR}
+          fill={color}
+          stroke="#000"
+          strokeWidth={2}
+        />
+        <text
+          x={cx}
+          y={cy + coreR + labelF}
+          textAnchor="middle"
+          className="galaxy-label"
+          fill={color}
+          style={{ fontSize: labelF }}
+        >
+          {active}
+        </text>
+
+        {/* notas */}
+        {notes.map((n, i) => {
+          const p = notePos(i);
+          return (
+            <g
+              key={n.slug}
+              className="note"
+              transform={`translate(${p.x} ${p.y})`}
+              onClick={() => {
+                setOpen(false);
+                router.push(`/articulo/${n.slug}`);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setOpen(false);
+                  router.push(`/articulo/${n.slug}`);
+                }
+              }}
+            >
+              <circle r={noteR * 2} fill={color} opacity={0.12} />
+              <circle
+                r={noteR}
+                fill="#0c0b10"
+                stroke={color}
+                strokeWidth={2}
+                className="note-core"
+              />
+              <text
+                y={noteR + labelF}
+                textAnchor="middle"
+                className="note-label"
+                fill="#ece8e1"
+                style={{ fontSize: labelF }}
+              >
+                {n.title.length > 24 ? n.title.slice(0, 23) + "…" : n.title}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    );
   }
-  function onPointerMove(e: React.PointerEvent) {
-    if (!drag.current) return;
-    const n = mapRef.current[drag.current.id];
-    const { x, y } = toSvg(e.clientX, e.clientY);
-    drag.current.moved += Math.abs(x - (n.fx ?? x)) + Math.abs(y - (n.fy ?? y));
-    n.fx = x;
-    n.fy = y;
-  }
-  function onPointerUp(id: string) {
-    const d = drag.current;
-    drag.current = null;
-    const n = mapRef.current[id];
-    n.fx = null;
-    n.fy = null;
-    if (d && d.moved < 6) {
-      if (id === "hub") return;
-      setOpen(false);
-      router.push(`/articulo/${id}`);
-    }
-  }
+
+  const starLayer = (
+    <g>
+      {stars.map((s, i) => (
+        <circle
+          key={i}
+          cx={s.x * w}
+          cy={s.y * h}
+          r={s.r}
+          fill={s.blue ? "#9fe8ff" : "#ffffff"}
+          style={
+            {
+              animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </g>
+  );
 
   return (
     <>
       <button
         className="graph-fab"
-        onClick={() => setOpen(true)}
-        aria-label="Abrir el grafo de notas"
+        onClick={() => {
+          setView("galaxies");
+          setOpen(true);
+        }}
+        aria-label="Abrir el mapa estelar de notas"
       >
         <span className="graph-fab-icon" aria-hidden="true">
           ◈
@@ -242,18 +458,20 @@ export default function GraphNav() {
         >
           <div className="graph-panel">
             <div className="graph-head">
+              {view === "galaxy" ? (
+                <button
+                  className="graph-back"
+                  onClick={() => setView("galaxies")}
+                >
+                  ◄ MAPA
+                </button>
+              ) : (
+                <span className="graph-ja">星図</span>
+              )}
               <div className="graph-title">
-                <span className="graph-ja">ネットワーク</span>
-                GRAFO DE NOTAS
+                {view === "galaxy" ? `GALAXIA · ${active}` : "MAPA ESTELAR"}
               </div>
-              <div className="graph-legend">
-                {categories.map((c) => (
-                  <span key={c} className="legend-item">
-                    <i style={{ background: categoryColor[c] }} />
-                    {c}
-                  </span>
-                ))}
-              </div>
+              <div className="graph-spacer" />
               <button
                 className="graph-close"
                 onClick={() => setOpen(false)}
@@ -263,77 +481,21 @@ export default function GraphNav() {
               </button>
             </div>
 
-            <svg
-              ref={svgRef}
-              className="graph-svg"
-              viewBox={`0 0 ${W} ${H}`}
-              preserveAspectRatio="xMidYMid meet"
-              onPointerMove={onPointerMove}
-            >
-              <g stroke="#3a3550">
-                {edges.map(([a, b], i) => {
-                  const na = mapRef.current[a];
-                  const nb = mapRef.current[b];
-                  if (!na || !nb) return null;
-                  const active = hover === a || hover === b;
-                  return (
-                    <line
-                      key={i}
-                      x1={na.x}
-                      y1={na.y}
-                      x2={nb.x}
-                      y2={nb.y}
-                      stroke={active ? na.color : "#332f47"}
-                      strokeWidth={active ? 2 : 1}
-                      opacity={active ? 0.9 : 0.5}
-                    />
-                  );
-                })}
-              </g>
-              {nodesRef.current.map((n) => {
-                const r = n.hub ? 15 : hover === n.id ? 12 : 8;
-                const dim = hover && hover !== n.id;
-                return (
-                  <g
-                    key={n.id}
-                    className="graph-node"
-                    transform={`translate(${n.x} ${n.y})`}
-                    onPointerDown={(e) => onPointerDown(e, n.id)}
-                    onPointerUp={() => onPointerUp(n.id)}
-                    onMouseEnter={() => setHover(n.id)}
-                    onMouseLeave={() => setHover((h) => (h === n.id ? null : h))}
-                  >
-                    <circle
-                      r={r + 6}
-                      fill={n.color}
-                      opacity={hover === n.id ? 0.25 : 0}
-                    />
-                    <circle
-                      r={r}
-                      fill={n.hub ? "#0c0b10" : n.color}
-                      stroke={n.color}
-                      strokeWidth={n.hub ? 3 : 2}
-                      opacity={dim ? 0.4 : 1}
-                    />
-                    <text
-                      className="graph-node-label"
-                      y={r + 14}
-                      textAnchor="middle"
-                      fill={hover === n.id ? n.color : "#8a83a0"}
-                      opacity={dim ? 0.35 : 1}
-                    >
-                      {n.label.length > 26
-                        ? n.label.slice(0, 25) + "…"
-                        : n.label}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
+            <div className="graph-canvas" ref={wrapRef}>
+              <svg
+                className="graph-svg"
+                viewBox={`0 0 ${w} ${h}`}
+                preserveAspectRatio="xMidYMid slice"
+              >
+                {starLayer}
+                {view === "galaxies" ? <GalaxiesLayer /> : <GalaxyDetail />}
+              </svg>
+            </div>
 
             <div className="graph-foot">
-              Arrastrá los nodos · clic para abrir la nota · esc para salir ·
-              <strong> pronto sincronizado con Obsidian</strong>
+              {view === "galaxies"
+                ? "Tocá una galaxia para entrar · cada galaxia es un tema"
+                : "Tocá una nota para leer · seguí la línea ↦ para viajar a otra galaxia · esc para volver"}
             </div>
           </div>
         </div>
