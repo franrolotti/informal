@@ -7,6 +7,7 @@ import {
   getArticle,
   type Block,
 } from "@/lib/articles";
+import DownloadPdf from "@/components/DownloadPdf";
 
 export function generateStaticParams() {
   return articles.map((a) => ({ slug: a.slug }));
@@ -73,9 +74,12 @@ export default async function ArticlePage({
 
   return (
     <article className="article container" style={style}>
-      <a className="back-link" href="/">
-        ← volver a la red
-      </a>
+      <div className="article-tools">
+        <a className="back-link" href="/">
+          ← volver a la red
+        </a>
+        <DownloadPdf article={article} />
+      </div>
 
       <div className="article-hero reveal">
         <div className="hero-grid" />
@@ -97,6 +101,13 @@ export default async function ArticlePage({
 
       <div className="article-body reveal" style={{ animationDelay: "120ms" }}>
         {article.body.map((block, i) => renderBlock(block, i))}
+      </div>
+
+      <div className="pdf-end">
+        <DownloadPdf
+          article={article}
+          label="▘ Descargar esta nota como .pdf cifrado"
+        />
       </div>
     </article>
   );
