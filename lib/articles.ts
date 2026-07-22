@@ -390,3 +390,12 @@ export const categoryAnchors: Record<Category, string> = {
   "Teorías Conspirativas": "teorias",
   Blogs: "blogs",
 };
+
+// Colores neón por categoría (arcade 80s / punk)
+export const categoryColor: Record<Category, string> = {
+  Cultura: "#ff2ec4",
+  Política: "#ff2438",
+  Economía: "#37ff8b",
+  "Teorías Conspirativas": "#22e0ff",
+  Blogs: "#ffe03a",
+};

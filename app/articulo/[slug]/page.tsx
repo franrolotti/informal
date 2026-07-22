@@ -1,6 +1,12 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { articles, getArticle, type Block } from "@/lib/articles";
+import {
+  articles,
+  categoryColor,
+  getArticle,
+  type Block,
+} from "@/lib/articles";
 
 export function generateStaticParams() {
   return articles.map((a) => ({ slug: a.slug }));
@@ -61,18 +67,23 @@ export default async function ArticlePage({
   const article = getArticle(slug);
   if (!article) notFound();
 
+  const style = {
+    "--cat": categoryColor[article.category],
+  } as CSSProperties;
+
   return (
-    <article className="article container">
+    <article className="article container" style={style}>
       <a className="back-link" href="/">
-        ← Volver a Informal
+        ← volver a la red
       </a>
 
       <div className="article-hero reveal">
-        <div className="hero-bg" style={{ background: article.color }} />
-        <div className="hero-veil" />
+        <div className="hero-grid" />
         <div className="article-hero-content">
-          <span className="eyebrow">{article.category}</span>
-          <h1 className="hero-title">{article.title}</h1>
+          <span className="eyebrow">▚ {article.category}</span>
+          <h1 className="hero-title glitch" data-text={article.title}>
+            {article.title}
+          </h1>
           <p className="hero-sub">{article.subtitle}</p>
           <div className="hero-meta">
             <span>{article.author}</span>

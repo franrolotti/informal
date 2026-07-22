@@ -1,38 +1,62 @@
 import type { Metadata } from "next";
-import { Playfair_Display, PT_Serif } from "next/font/google";
+import { Press_Start_2P, Anton, Space_Mono, DotGothic16 } from "next/font/google";
+import GraphNav from "@/components/GraphNav";
 import "./globals.css";
 
-const display = Playfair_Display({
+const arcade = Press_Start_2P({
   subsets: ["latin"],
-  weight: ["700", "800", "900"],
-  style: ["normal", "italic"],
+  weight: "400",
+  variable: "--font-arcade",
+  display: "swap",
+});
+const display = Anton({
+  subsets: ["latin"],
+  weight: "400",
   variable: "--font-display",
   display: "swap",
 });
-
-const body = PT_Serif({
+const mono = Space_Mono({
   subsets: ["latin"],
   weight: ["400", "700"],
   style: ["normal", "italic"],
-  variable: "--font-body",
+  variable: "--font-mono",
+  display: "swap",
+});
+const jp = DotGothic16({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-jp",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "info.rmal — Análisis, cultura, política y economía",
+  title: "info.rmal ▚ contra la desinformación de las redes",
   description:
-    "Editorial info.rmal: análisis riguroso y opinión sin corrección de temporada sobre cultura, política, economía y más.",
+    "Prensa subterránea contra la desinformación de las redes sociales. Verificá antes de compartir. Periodismo punk, análisis riguroso.",
 };
 
 function Logo() {
   return (
     <a className="brand" href="/" aria-label="info.rmal — inicio">
-      <span className="brand-sun" aria-hidden="true" />
+      <span className="brand-ja">インフォーマル</span>
       <span className="brand-word">
-        info<span className="brand-dot">.</span>
-        <span className="brand-tail">rmal</span>
+        info<span className="brand-dot">.</span>rmal
       </span>
+      <span className="brand-sub">▲ 1UP · ANARCHO PRESS</span>
     </a>
+  );
+}
+
+function Ticker() {
+  const msg =
+    "⚠ CONTRA LA DESINFORMACIÓN DE LAS REDES  ✶  VERIFICÁ ANTES DE COMPARTIR  Ⓐ  NO LE CREAS AL ALGORITMO  ✶  PENSÁ POR VOS  Ⓐ  PRENSA SUBTERRÁNEA  ✶  ";
+  return (
+    <div className="ticker" aria-hidden="true">
+      <div className="ticker-track">
+        <span>{msg}</span>
+        <span>{msg}</span>
+      </div>
+    </div>
   );
 }
 
@@ -51,9 +75,10 @@ function Nav() {
         </nav>
         <div className="nav-spacer" />
         <a className="nav-cta" href="/#destacado">
-          Leer lo último
+          ▶ Leer
         </a>
       </div>
+      <Ticker />
     </header>
   );
 }
@@ -65,10 +90,16 @@ function Footer() {
         <div>
           <strong className="footer-brand">
             info<span>.</span>rmal
-          </strong>{" "}
-          · Editorial de análisis, cultura, política y economía.
+          </strong>
+          <div className="footer-manifesto">
+            Prensa subterránea contra la desinformación de las redes. Verificá,
+            dudá, pensá. Ⓐ
+          </div>
         </div>
-        <div>© {new Date().getFullYear()} info.rmal — Argumentos, no volumen.</div>
+        <div className="footer-meta">
+          © {new Date().getFullYear()} · No copyright, copyleft. Compartí con
+          criterio.
+        </div>
       </div>
     </footer>
   );
@@ -80,11 +111,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${display.variable} ${body.variable}`}>
+    <html
+      lang="es"
+      className={`${arcade.variable} ${display.variable} ${mono.variable} ${jp.variable}`}
+    >
       <body>
+        <div className="scanlines" aria-hidden="true" />
         <Nav />
         <main>{children}</main>
         <Footer />
+        <GraphNav />
       </body>
     </html>
   );
