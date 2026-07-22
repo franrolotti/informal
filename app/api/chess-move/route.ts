@@ -4,6 +4,9 @@ import { Chess, validateFen, type Move } from "chess.js";
 export const runtime = "nodejs";
 
 const MODEL = process.env.OPENAI_CHESS_MODEL || "gpt-5.4-nano";
+const MAX_BODY_BYTES = 512;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 8;
 const INPUT_USD_PER_MTOK = Number(
   process.env.OPENAI_CHESS_INPUT_USD_PER_MTOK || "0.20"
 );
@@ -21,6 +24,10 @@ interface ChatUsage {
     cached_tokens?: number;
   };
 }
+
+type RateBucket = { count: number; resetAt: number };
+
+const rateBuckets = new Map<string, RateBucket>();
 
 function legalMoves(chess: Chess): Move[] {
   return chess.moves({ verbose: true });
@@ -51,9 +58,149 @@ function normalizeMove(raw: string): string {
   return match?.[0] || "";
 }
 
+function json(data: unknown, init?: ResponseInit) {
+  const response = NextResponse.json(data, init);
+  response.headers.set("Cache-Control", "no-store, max-age=0");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  return response;
+}
+
+function allowedOrigins(): Set<string> {
+  const raw = [
+    process.env.OPENAI_ALLOWED_ORIGINS,
+    process.env.NEXT_PUBLIC_SITE_URL,
+  ]
+    .filter(Boolean)
+    .join(",");
+
+  return new Set(
+    raw
+      .split(",")
+      .map((origin) => origin.trim().replace(/\/$/, ""))
+      .filter(Boolean)
+  );
+}
+
+function requestOrigin(request: Request): string {
+  const origin = request.headers.get("origin");
+  if (origin) return origin.replace(/\/$/, "");
+
+  const referer = request.headers.get("referer");
+  if (!referer) return "";
+
+  try {
+    return new URL(referer).origin;
+  } catch {
+    return "";
+  }
+}
+
+function assertAllowedOrigin(request: Request): NextResponse | null {
+  const allowed = allowedOrigins();
+  if (allowed.size === 0) {
+    return json(
+      {
+        error:
+          "Falta configurar OPENAI_ALLOWED_ORIGINS o NEXT_PUBLIC_SITE_URL antes de activar OpenAI.",
+      },
+      { status: 503 }
+    );
+  }
+
+  const origin = requestOrigin(request);
+  if (!origin || !allowed.has(origin)) {
+    return json({ error: "Origen no permitido." }, { status: 403 });
+  }
+
+  return null;
+}
+
+function clientId(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+function assertRateLimit(request: Request): NextResponse | null {
+  const now = Date.now();
+  const id = clientId(request);
+  const current = rateBuckets.get(id);
+
+  if (!current || current.resetAt <= now) {
+    rateBuckets.set(id, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return null;
+  }
+
+  current.count += 1;
+  if (current.count <= RATE_LIMIT_MAX) return null;
+
+  return json(
+    { error: "Demasiadas solicitudes. Probá de nuevo en unos segundos." },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(Math.ceil((current.resetAt - now) / 1000)),
+      },
+    }
+  );
+}
+
+function assertSmallJsonRequest(request: Request): NextResponse | null {
+  const type = request.headers.get("content-type") || "";
+  if (!type.toLowerCase().includes("application/json")) {
+    return json({ error: "Content-Type inválido." }, { status: 415 });
+  }
+
+  const rawLength = request.headers.get("content-length");
+  if (rawLength) {
+    const length = Number(rawLength);
+    if (!Number.isFinite(length) || length > MAX_BODY_BYTES) {
+      return json({ error: "Payload demasiado grande." }, { status: 413 });
+    }
+  }
+
+  return null;
+}
+
+async function readJsonBody(request: Request): Promise<{ fen?: string } | null> {
+  const raw = await request.text();
+  if (raw.length > MAX_BODY_BYTES) {
+    throw new Error("too-large");
+  }
+
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+
+  return parsed as { fen?: string };
+}
+
+function tooLargeBody() {
+  return json({ error: "Payload demasiado grande." }, { status: 413 });
+}
+
+function invalidJson() {
+  return json({ error: "JSON inválido." }, { status: 400 });
+}
+
+function invalidFenBody(body: { fen?: string } | null) {
+  if (!body || typeof body.fen !== "string" || body.fen.length > 100) {
+    return json({ error: "FEN inválido." }, { status: 400 });
+  }
+
+  return null;
+}
+
+function payloadTooLargeError(error: unknown): boolean {
+  return error instanceof Error && error.message === "too-large";
+}
+
 export async function POST(request: Request) {
   if (process.env.OPENAI_CHESS_ENABLED !== "true") {
-    return NextResponse.json(
+    return json(
       {
         error:
           "El oponente con OpenAI está desactivado. Activá OPENAI_CHESS_ENABLED=true para usarlo.",
@@ -62,35 +209,50 @@ export async function POST(request: Request) {
     );
   }
 
+  const originError = assertAllowedOrigin(request);
+  if (originError) return originError;
+
+  const sizeError = assertSmallJsonRequest(request);
+  if (sizeError) return sizeError;
+
+  const rateError = assertRateLimit(request);
+  if (rateError) return rateError;
+
   if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json(
+    return json(
       { error: "OPENAI_API_KEY no está configurada en el servidor." },
       { status: 503 }
     );
   }
 
-  let body: { fen?: string };
+  let body: { fen?: string } | null;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+    body = await readJsonBody(request);
+  } catch (error) {
+    return payloadTooLargeError(error) ? tooLargeBody() : invalidJson();
   }
 
-  const fen = body.fen || "";
+  const bodyError = invalidFenBody(body);
+  if (bodyError) return bodyError;
+
+  const fen = body!.fen!;
   const valid = validateFen(fen);
   if (!valid.ok) {
-    return NextResponse.json({ error: valid.error || "FEN inválido." }, { status: 400 });
+    return json(
+      { error: valid.error || "FEN inválido." },
+      { status: 400 }
+    );
   }
 
   const chess = new Chess(fen);
   if (chess.turn() !== "b") {
-    return NextResponse.json(
+    return json(
       { error: "El modelo solo juega cuando le toca a negras." },
       { status: 400 }
     );
   }
   if (chess.isGameOver()) {
-    return NextResponse.json({ error: "La partida ya terminó." }, { status: 400 });
+    return json({ error: "La partida ya terminó." }, { status: 400 });
   }
 
   const legal = legalMoves(chess);
@@ -125,8 +287,8 @@ export async function POST(request: Request) {
 
   const data = await response.json();
   if (!response.ok) {
-    return NextResponse.json(
-      { error: data?.error?.message || "OpenAI no pudo generar la jugada." },
+    return json(
+      { error: "OpenAI no pudo generar la jugada." },
       { status: response.status }
     );
   }
@@ -142,13 +304,12 @@ export async function POST(request: Request) {
   });
   const usage = data?.usage as ChatUsage | undefined;
 
-  return NextResponse.json({
+  return json({
     model: MODEL,
     move: moveId(applied),
     san: applied.san,
     fen: chess.fen(),
     usedFallback: !selected,
-    raw,
     usage: {
       inputTokens: usage?.prompt_tokens || 0,
       cachedInputTokens: usage?.prompt_tokens_details?.cached_tokens || 0,
