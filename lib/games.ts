@@ -30,9 +30,9 @@ export const games: Game[] = [
     slug: "ajedrez",
     title: "Ajedrez",
     subtitle:
-      "Jugá con blancas contra un modelo barato de OpenAI. La partida muestra el costo acumulado jugada por jugada.",
+      "Partida local para dos jugadores. Blancas y negras se alternan en el mismo tablero.",
     color: "#ffe03a",
-    badge: "IA",
+    badge: "2P",
     glyph: "♞",
   },
 ];

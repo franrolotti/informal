@@ -52,6 +52,16 @@ function normalizeMove(raw: string): string {
 }
 
 export async function POST(request: Request) {
+  if (process.env.OPENAI_CHESS_ENABLED !== "true") {
+    return NextResponse.json(
+      {
+        error:
+          "El oponente con OpenAI está desactivado. Activá OPENAI_CHESS_ENABLED=true para usarlo.",
+      },
+      { status: 403 }
+    );
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       { error: "OPENAI_API_KEY no está configurada en el servidor." },

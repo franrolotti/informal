@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Chess, type Move, type Square } from "chess.js";
 
+const AI_OPPONENT_ENABLED = false;
+
 type ApiMove = {
   model: string;
   move: string;
@@ -39,11 +41,15 @@ function squareAt(row: number, col: number): Square {
 
 function statusOf(chess: Chess, thinking: boolean): string {
   if (thinking) return "El modelo está calculando negras...";
-  if (chess.isCheckmate()) return chess.turn() === "w" ? "Jaque mate: ganó negras." : "Jaque mate: ganaste.";
+  if (chess.isCheckmate())
+    return chess.turn() === "w"
+      ? "Jaque mate: ganaron negras."
+      : "Jaque mate: ganaron blancas.";
   if (chess.isStalemate()) return "Tablas por ahogado.";
   if (chess.isDraw()) return "Tablas.";
-  if (chess.isCheck()) return "Jaque.";
-  return chess.turn() === "w" ? "Tu turno: blancas." : "Turno de negras.";
+  const turn = chess.turn() === "w" ? "blancas" : "negras";
+  if (chess.isCheck()) return `Jaque. Mueven ${turn}.`;
+  return `Mueven ${turn}.`;
 }
 
 function cents(usd: number): string {
@@ -105,7 +111,7 @@ export default function ChessGame() {
   }
 
   function play(from: Square, to: Square) {
-    if (thinking || chess.turn() !== "w" || chess.isGameOver()) return;
+    if (thinking || chess.isGameOver()) return;
     const attempt = chess
       .moves({ square: from, verbose: true })
       .find((move) => move.to === to) as Move | undefined;
@@ -118,7 +124,9 @@ export default function ChessGame() {
     setSelected(null);
     setFen(chess.fen());
     setMoves((prev) => [...prev, move.san]);
-    if (!chess.isGameOver()) void askOpponent(chess.fen());
+    if (AI_OPPONENT_ENABLED && chess.turn() === "b" && !chess.isGameOver()) {
+      void askOpponent(chess.fen());
+    }
   }
 
   function clickSquare(square: Square) {
@@ -134,7 +142,7 @@ export default function ChessGame() {
         return;
       }
     }
-    if (piece?.color === "w" && chess.turn() === "w" && !thinking) {
+    if (piece?.color === chess.turn() && !thinking) {
       setSelected(square);
     }
   }
@@ -193,24 +201,37 @@ export default function ChessGame() {
         </div>
 
         <div className="chess-side">
-          <div className="chess-meter">
-            <div>
-              <span>Modelo</span>
-              <b>{model}</b>
+          {AI_OPPONENT_ENABLED ? (
+            <div className="chess-meter">
+              <div>
+                <span>Modelo</span>
+                <b>{model}</b>
+              </div>
+              <div>
+                <span>Costo partida</span>
+                <b>{cents(totalCost)}</b>
+              </div>
+              <div>
+                <span>Última jugada</span>
+                <b>{cents(lastCost)}</b>
+              </div>
+              <div>
+                <span>Tokens</span>
+                <b>{tokens.input}/{tokens.output}</b>
+              </div>
             </div>
-            <div>
-              <span>Costo partida</span>
-              <b>{cents(totalCost)}</b>
+          ) : (
+            <div className="chess-meter">
+              <div>
+                <span>Modo</span>
+                <b>2 jugadores</b>
+              </div>
+              <div>
+                <span>Costo</span>
+                <b>$0.000000</b>
+              </div>
             </div>
-            <div>
-              <span>Última jugada</span>
-              <b>{cents(lastCost)}</b>
-            </div>
-            <div>
-              <span>Tokens</span>
-              <b>{tokens.input}/{tokens.output}</b>
-            </div>
-          </div>
+          )}
 
           {error ? <div className="game-status wrong">{error}</div> : null}
           {fallbacks > 0 ? (
@@ -222,7 +243,7 @@ export default function ChessGame() {
 
           <div className="chess-moves">
             {moves.length === 0 ? (
-              <span>Mové una pieza blanca para empezar.</span>
+              <span>Blancas empiezan. Después se alternan los turnos.</span>
             ) : (
               moves.map((move, i) => (
                 <span key={`${move}-${i}`}>
@@ -236,8 +257,8 @@ export default function ChessGame() {
       </div>
 
       <p className="game-hint">
-        Negras juega con OpenAI · costo estimado con tokens reportados por la
-        API · configurá OPENAI_API_KEY en el servidor.
+        Modo local sin gasto: juegan blancas y negras por turnos. El código del
+        oponente con OpenAI queda desactivado para reactivarlo más adelante.
       </p>
     </div>
   );
