@@ -101,6 +101,10 @@ function Footer() {
         <div className="footer-meta">
           © {new Date().getFullYear()} · No copyright, copyleft. Compartí con
           criterio.
+          {/* Acceso al panel interno: discreto, pero no escondido. */}
+          <a className="footer-login" href="/login">
+            Ⓐ redacción
+          </a>
         </div>
       </div>
     </footer>

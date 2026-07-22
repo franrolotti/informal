@@ -1553,3 +1553,15 @@ img {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.footer-login {
+  display: inline-block;
+  margin-left: 14px;
+  color: var(--ink-faint);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.footer-login:hover {
+  color: var(--ink-soft);
+  border-bottom-color: currentColor;
+}
