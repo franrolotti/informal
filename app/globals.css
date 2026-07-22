@@ -1399,3 +1399,157 @@ img {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------- */
+/* Login y panel de redacción                                       */
+/* ---------------------------------------------------------------- */
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid var(--line);
+  box-shadow: none;
+  padding: 8px 14px;
+  font-size: 10px;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  border-color: var(--cat);
+  transform: none;
+  box-shadow: none;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 420px;
+  padding: 28px;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--cat);
+}
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.login-field span {
+  font-family: var(--font-arcade);
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+.login-field input {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 2px solid var(--line);
+}
+.login-field input:focus {
+  outline: none;
+  border-color: var(--cat);
+}
+.login-error {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--red);
+}
+.login-nota {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+.admin-sesion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0 24px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+  border-bottom: 2px solid var(--line);
+}
+.admin-h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 36px 0 8px;
+}
+.admin-ayuda {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.admin-ayuda code {
+  color: var(--ink-soft);
+}
+
+/* La tabla scrollea sola: el sitio nunca debe scrollear en horizontal. */
+.admin-tabla-wrap {
+  overflow-x: auto;
+  border: 2px solid var(--line);
+}
+.admin-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.admin-tabla th {
+  text-align: left;
+  padding: 12px 14px;
+  font-family: var(--font-arcade);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border-bottom: 2px solid var(--line);
+}
+.admin-tabla td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+.admin-tabla tr:last-child td {
+  border-bottom: none;
+}
+
+.estado {
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+.estado-published { color: var(--green); }
+.estado-draft     { color: var(--yellow); }
+.estado-retired   { color: var(--ink-faint); }
+
+.admin-rol-form {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.admin-rol-form select {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 7px 10px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 2px solid var(--line);
+}
+.admin-rol-form select:disabled,
+.admin-rol-form button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
