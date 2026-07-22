@@ -1,9 +1,10 @@
 import ArticleCard from "@/components/ArticleCard";
 import {
-  articles,
   byCategory,
   categories,
+  categoryAnchors,
   getFeatured,
+  getLatest,
 } from "@/lib/articles";
 
 function formatDate(iso: string): string {
@@ -14,27 +15,23 @@ function formatDate(iso: string): string {
   });
 }
 
-const categoryAnchors: Record<string, string> = {
-  Economía: "economia",
-  Cultura: "cultura",
-  Sociedad: "sociedad",
-};
-
 export default function Home() {
   const featured = getFeatured();
+  const novedades = getLatest(8);
 
   return (
     <>
       <section className="hero container" id="destacado">
         <div className="hero-card">
           <div className="hero-bg" style={{ background: featured.gradient }} />
+          <div className="hero-grid" />
           <div className="hero-veil" />
           <div className="hero-content">
             <span className="eyebrow">Destacado · {featured.category}</span>
             <h1 className="hero-title">{featured.title}</h1>
             <p className="hero-sub">{featured.subtitle}</p>
             <a className="btn" href={`/articulo/${featured.slug}`}>
-              Leer el análisis →
+              ▶ Leer el análisis
             </a>
             <div className="hero-meta">
               <span>{featured.author}</span>
@@ -47,14 +44,14 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section container">
+      <section className="section container" id="novedades">
         <div className="row-head">
           <div className="row-title">
             Novedades <span>lo último de la redacción</span>
           </div>
         </div>
         <div className="row">
-          {articles.map((a) => (
+          {novedades.map((a) => (
             <ArticleCard key={a.slug} article={a} />
           ))}
         </div>

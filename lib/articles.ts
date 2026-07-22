@@ -1,4 +1,9 @@
-export type Category = "Economía" | "Cultura" | "Sociedad";
+export type Category =
+  | "Cultura"
+  | "Política"
+  | "Economía"
+  | "Teorías Conspirativas"
+  | "Blogs";
 
 export type Block =
   | { type: "p"; text: string }
@@ -19,18 +24,39 @@ export interface Article {
   body: Block[];
 }
 
+// Paleta de degradados ochentosa (synthwave / Miami)
+const G = {
+  neon: "linear-gradient(135deg, #ff2d95 0%, #8a2be2 100%)",
+  cyan: "linear-gradient(135deg, #12c9c9 0%, #2d7bff 100%)",
+  sunset: "linear-gradient(135deg, #ff2d95 0%, #ff7a3d 55%, #ffca3a 100%)",
+  amber: "linear-gradient(135deg, #ffca3a 0%, #ff7a3d 100%)",
+  grape: "linear-gradient(135deg, #8a2be2 0%, #12c9c9 100%)",
+  lime: "linear-gradient(135deg, #12c9c9 0%, #7bd938 100%)",
+  magenta: "linear-gradient(135deg, #ff2d95 0%, #ff6ec7 100%)",
+  night: "linear-gradient(135deg, #2d1b69 0%, #ff2d95 100%)",
+};
+
+const lorem =
+  "Este es un texto de ejemplo mientras la redacción termina la nota. En Informal preferimos publicar cuando el argumento está listo, no cuando el algoritmo lo pide. Volvé pronto: acá va a haber datos, contexto y una opinión que se banca la discusión.";
+
+function placeholder(text?: string): Block[] {
+  return [
+    { type: "p", text: text ?? lorem },
+    { type: "p", text: lorem },
+  ];
+}
+
 export const articles: Article[] = [
   {
     slug: "argentina-racismo-mundial-2026",
     title: "¿Es Argentina un país racista?",
     subtitle:
       "Un análisis en frío de lo que pasó en el Mundial 2026 y por qué la respuesta honesta es más incómoda —y más interesante— que un titular.",
-    category: "Sociedad",
+    category: "Cultura",
     author: "Redacción Informal",
     date: "2026-07-22",
     readingMinutes: 11,
-    gradient:
-      "linear-gradient(135deg, #7cc4ff 0%, #a5d8ff 45%, #ffe8a3 100%)",
+    gradient: G.sunset,
     featured: true,
     body: [
       {
@@ -85,37 +111,98 @@ export const articles: Article[] = [
       },
     ],
   },
+
+  // ---------------- CULTURA ----------------
   {
-    slug: "editorial-por-que-informal",
-    title: "Por qué existe Informal",
+    slug: "cultura-del-scroll",
+    title: "La cultura del scroll infinito",
     subtitle:
-      "Análisis económico riguroso y opinión sin corrección de temporada. Nuestra declaración de principios.",
+      "Cómo el diseño de las plataformas reescribió nuestra atención —y qué podemos recuperar.",
     category: "Cultura",
     author: "Redacción Informal",
-    date: "2026-07-20",
-    readingMinutes: 4,
-    gradient:
-      "linear-gradient(135deg, #ffd6a5 0%, #ffc3a0 50%, #ff9a9e 100%)",
+    date: "2026-07-15",
+    readingMinutes: 6,
+    gradient: G.grape,
     body: [
       {
         type: "p",
-        text: "Informal nace de una molestia productiva: la sensación de que buena parte del debate público confunde volumen con argumento. Queremos hacer lo contrario. Economía con datos, cultura con criterio y sociedad sin miedo a la incomodidad.",
+        text: "El scroll infinito no es una casualidad tecnológica: es una decisión de diseño con incentivos económicos detrás. Entender esos incentivos es el primer paso para no ser gobernado por ellos.",
       },
-      { type: "h2", text: "Tres reglas" },
-      {
-        type: "list",
-        items: [
-          "El dato manda. Si una afirmación no resiste una fuente, no la publicamos como hecho.",
-          "La opinión se firma y se defiende, no se disfraza de neutralidad.",
-          "Nada es demasiado incómodo para pensarlo en voz alta, si se piensa bien.",
-        ],
-      },
+      { type: "h2", text: "El precio de la atención gratis" },
       {
         type: "p",
-        text: "Si buscás confirmación de lo que ya creés, hay lugares más cómodos. Si buscás argumentos, bienvenido.",
+        text: "Cuando el producto es gratis, la atención es la mercancía. Nada de esto es nuevo, pero la escala sí lo es. Lo interesante no es demonizar la herramienta sino preguntarse qué hábitos queremos recuperar deliberadamente.",
       },
     ],
   },
+  {
+    slug: "nostalgia-ochentosa",
+    title: "La fábrica de nostalgia ochentosa",
+    subtitle:
+      "Por qué la estética de los 80 volvió con todo y qué dice eso de nuestro presente.",
+    category: "Cultura",
+    author: "Redacción Informal",
+    date: "2026-07-12",
+    readingMinutes: 5,
+    gradient: G.magenta,
+    body: placeholder(
+      "Neón, sintetizadores y tipografías cromadas: la estética ochentosa no para de reciclarse. ¿Homenaje o falta de ideas nuevas? Spoiler: un poco de las dos."
+    ),
+  },
+  {
+    slug: "fin-del-monocultivo-cultural",
+    title: "El fin del monocultivo cultural",
+    subtitle:
+      "Ya nadie mira lo mismo al mismo tiempo. Ganamos variedad y perdimos conversación común.",
+    category: "Cultura",
+    author: "Redacción Informal",
+    date: "2026-07-08",
+    readingMinutes: 7,
+    gradient: G.cyan,
+    body: placeholder(),
+  },
+
+  // ---------------- POLÍTICA ----------------
+  {
+    slug: "la-grieta-explicada",
+    title: "La grieta, explicada sin insultar a nadie",
+    subtitle:
+      "Un intento honesto de mapear por qué discutimos como discutimos —y por qué a algunos les conviene.",
+    category: "Política",
+    author: "Redacción Informal",
+    date: "2026-07-19",
+    readingMinutes: 9,
+    gradient: G.neon,
+    body: placeholder(
+      "La polarización no es un accidente: es un modelo de negocio político y mediático. Desarmarlo requiere entender los incentivos, no repartir culpas."
+    ),
+  },
+  {
+    slug: "populismo-manual-de-uso",
+    title: "Populismo: manual de uso",
+    subtitle:
+      "Qué es y qué no es un fenómeno que se acusa mucho y se define poco.",
+    category: "Política",
+    author: "Redacción Informal",
+    date: "2026-07-14",
+    readingMinutes: 8,
+    gradient: G.sunset,
+    body: placeholder(),
+  },
+  {
+    slug: "que-quedo-del-centro",
+    title: "¿Qué quedó del centro político?",
+    subtitle:
+      "Todos dicen ser moderados y nadie parece serlo. Una radiografía del casillero más disputado.",
+    category: "Política",
+    author: "Redacción Informal",
+    date: "2026-07-06",
+    readingMinutes: 6,
+    gradient: G.amber,
+    body: placeholder(),
+  },
+
+  // ---------------- ECONOMÍA ----------------
   {
     slug: "inflacion-y-expectativas",
     title: "Inflación: la guerra por las expectativas",
@@ -125,8 +212,7 @@ export const articles: Article[] = [
     author: "Redacción Informal",
     date: "2026-07-18",
     readingMinutes: 8,
-    gradient:
-      "linear-gradient(135deg, #b5ead7 0%, #c7f0e0 50%, #a5d8ff 100%)",
+    gradient: G.lime,
     body: [
       {
         type: "p",
@@ -148,27 +234,126 @@ export const articles: Article[] = [
     ],
   },
   {
-    slug: "cultura-del-scroll",
-    title: "La cultura del scroll infinito",
+    slug: "dolarizacion-pros-y-contras",
+    title: "Dolarización: el debate sin remera",
     subtitle:
-      "Cómo el diseño de las plataformas reescribió nuestra atención —y qué podemos recuperar.",
-    category: "Cultura",
+      "Los argumentos serios a favor y en contra, sin la camiseta puesta.",
+    category: "Economía",
     author: "Redacción Informal",
-    date: "2026-07-15",
+    date: "2026-07-11",
+    readingMinutes: 10,
+    gradient: G.cyan,
+    body: placeholder(
+      "Dolarizar es una decisión de régimen, no un truco de magia. Renunciás a la política monetaria a cambio de credibilidad importada. Si eso conviene depende de cosas que casi nunca se discuten con calma."
+    ),
+  },
+  {
+    slug: "el-mito-del-vivir-con-lo-nuestro",
+    title: "El mito del 'vivir con lo nuestro'",
+    subtitle:
+      "Autarquía, comercio y por qué cerrarse casi nunca sale gratis.",
+    category: "Economía",
+    author: "Redacción Informal",
+    date: "2026-07-04",
+    readingMinutes: 7,
+    gradient: G.grape,
+    body: placeholder(),
+  },
+
+  // ---------------- TEORÍAS CONSPIRATIVAS ----------------
+  {
+    slug: "anatomia-de-una-conspiracion",
+    title: "Anatomía de una teoría conspirativa",
+    subtitle:
+      "Por qué son tan atractivas y qué mecanismos psicológicos las mantienen vivas. Análisis, no promoción.",
+    category: "Teorías Conspirativas",
+    author: "Redacción Informal",
+    date: "2026-07-17",
+    readingMinutes: 9,
+    gradient: G.night,
+    body: placeholder(
+      "Una buena teoría conspirativa es infalsable, halagadora para quien la cree y hostil a la casualidad. En esta serie las tomamos en serio —para desarmarlas con evidencia, no para reírnos del que las cree."
+    ),
+  },
+  {
+    slug: "terraplanismo-como-fenomeno",
+    title: "Terraplanismo: la Tierra plana como identidad",
+    subtitle:
+      "Menos sobre geografía y más sobre pertenencia. Qué necesidad emocional viene a llenar.",
+    category: "Teorías Conspirativas",
+    author: "Redacción Informal",
+    date: "2026-07-10",
     readingMinutes: 6,
-    gradient:
-      "linear-gradient(135deg, #cdb4f6 0%, #d8c5ff 50%, #a5d8ff 100%)",
+    gradient: G.neon,
+    body: placeholder(),
+  },
+  {
+    slug: "chemtrails-el-cielo-como-lienzo",
+    title: "Chemtrails: el cielo como lienzo del miedo",
+    subtitle:
+      "Cómo una estela de condensación se convirtió en una supuesta prueba de todo.",
+    category: "Teorías Conspirativas",
+    author: "Redacción Informal",
+    date: "2026-07-02",
+    readingMinutes: 5,
+    gradient: G.amber,
+    body: placeholder(),
+  },
+
+  // ---------------- BLOGS ----------------
+  {
+    slug: "editorial-por-que-informal",
+    title: "Por qué existe Informal",
+    subtitle:
+      "Análisis riguroso y opinión sin corrección de temporada. Nuestra declaración de principios.",
+    category: "Blogs",
+    author: "Redacción Informal",
+    date: "2026-07-20",
+    readingMinutes: 4,
+    gradient: G.magenta,
     body: [
       {
         type: "p",
-        text: "El scroll infinito no es una casualidad tecnológica: es una decisión de diseño con incentivos económicos detrás. Entender esos incentivos es el primer paso para no ser gobernado por ellos.",
+        text: "Informal nace de una molestia productiva: la sensación de que buena parte del debate público confunde volumen con argumento. Queremos hacer lo contrario. Economía con datos, cultura con criterio y política sin miedo a la incomodidad.",
       },
-      { type: "h2", text: "El precio de la atención gratis" },
+      { type: "h2", text: "Tres reglas" },
+      {
+        type: "list",
+        items: [
+          "El dato manda. Si una afirmación no resiste una fuente, no la publicamos como hecho.",
+          "La opinión se firma y se defiende, no se disfraza de neutralidad.",
+          "Nada es demasiado incómodo para pensarlo en voz alta, si se piensa bien.",
+        ],
+      },
       {
         type: "p",
-        text: "Cuando el producto es gratis, la atención es la mercancía. Nada de esto es nuevo, pero la escala sí lo es. Lo interesante no es demonizar la herramienta sino preguntarse qué hábitos queremos recuperar deliberadamente.",
+        text: "Si buscás confirmación de lo que ya creés, hay lugares más cómodos. Si buscás argumentos, bienvenido.",
       },
     ],
+  },
+  {
+    slug: "diario-de-redaccion-01",
+    title: "Diario de redacción #01",
+    subtitle:
+      "Notas sueltas, ideas a medio cocinar y lo que quedó afuera de las notas de esta semana.",
+    category: "Blogs",
+    author: "Redacción Informal",
+    date: "2026-07-13",
+    readingMinutes: 3,
+    gradient: G.lime,
+    body: placeholder(),
+  },
+  {
+    slug: "cafe-y-teclado",
+    title: "Café y teclado",
+    subtitle:
+      "Un blog más personal: sobre escribir, dudar y publicar igual.",
+    category: "Blogs",
+    author: "Redacción Informal",
+    date: "2026-07-05",
+    readingMinutes: 4,
+    gradient: G.sunset,
+    body: placeholder(),
   },
 ];
 
@@ -184,4 +369,24 @@ export function byCategory(category: Category): Article[] {
   return articles.filter((a) => a.category === category);
 }
 
-export const categories: Category[] = ["Economía", "Cultura", "Sociedad"];
+export function getLatest(limit = 8): Article[] {
+  return [...articles]
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, limit);
+}
+
+export const categories: Category[] = [
+  "Cultura",
+  "Política",
+  "Economía",
+  "Teorías Conspirativas",
+  "Blogs",
+];
+
+export const categoryAnchors: Record<Category, string> = {
+  Cultura: "cultura",
+  Política: "politica",
+  Economía: "economia",
+  "Teorías Conspirativas": "teorias",
+  Blogs: "blogs",
+};

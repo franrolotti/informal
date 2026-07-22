@@ -13,6 +13,9 @@ export default function ArticleCard({ article }: { article: Article }) {
     <a className="card" href={`/articulo/${article.slug}`}>
       <div className="card-cover" style={{ background: article.gradient }}>
         <span className="tag">{article.category}</span>
+        <span className="play" aria-hidden="true">
+          ▶
+        </span>
       </div>
       <div className="card-body">
         <div className="card-title">{article.title}</div>
