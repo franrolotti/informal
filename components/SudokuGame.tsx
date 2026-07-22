@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type FocusEvent,
+  type MouseEvent,
+} from "react";
 import {
   generateSudoku,
   SUDOKU_SIZES,
@@ -79,6 +85,10 @@ export default function SudokuGame() {
     return false;
   }
 
+  function selectCell(e: FocusEvent<HTMLInputElement> | MouseEvent<HTMLInputElement>) {
+    e.currentTarget.select();
+  }
+
   return (
     <div className="sudoku">
       <div className="game-controls">
@@ -138,6 +148,8 @@ export default function SudokuGame() {
               inputMode="numeric"
               value={v === 0 ? "" : String(v)}
               onChange={(e) => setCell(i, e.target.value)}
+              onFocus={selectCell}
+              onClick={selectCell}
               readOnly={given(i)}
               aria-label={`fila ${r + 1} columna ${c + 1}`}
             />

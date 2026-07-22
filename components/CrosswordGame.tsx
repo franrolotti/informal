@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FocusEvent,
+  type MouseEvent,
+} from "react";
 import { newCrossword, type Crossword } from "@/lib/crossword";
 
 const key = (r: number, c: number) => r + "," + c;
@@ -50,6 +56,10 @@ export default function CrosswordGame() {
     return val === sol ? "ok" : "no";
   };
 
+  function selectCell(e: FocusEvent<HTMLInputElement> | MouseEvent<HTMLInputElement>) {
+    e.currentTarget.select();
+  }
+
   return (
     <div className="crossword">
       <div className="game-controls">
@@ -90,7 +100,9 @@ export default function CrosswordGame() {
                   <input
                     value={entries[key(r, c)] || ""}
                     onChange={(e) => set(r, c, e.target.value)}
-                    maxLength={1}
+                    onFocus={selectCell}
+                    onClick={selectCell}
+                    inputMode="text"
                     aria-label={`fila ${r + 1} columna ${c + 1}`}
                   />
                 </div>
