@@ -659,6 +659,9 @@ img {
 .back-link:hover {
   text-decoration: underline;
 }
+.article-hero-actions {
+  margin-top: 22px;
+}
 .pdf-btn {
   font-family: var(--font-mono);
   font-size: 12px;

@@ -46,7 +46,7 @@ function fingerprint(seed: string): string {
 
 export default function DownloadPdf({
   article,
-  label = "▘ Descargar .pdf",
+  label = "Descargar PDF",
 }: {
   article: Article;
   label?: string;

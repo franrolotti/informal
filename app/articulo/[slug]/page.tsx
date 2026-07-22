@@ -96,6 +96,9 @@ export default async function ArticlePage({
             <span>·</span>
             <span>{article.readingMinutes} min de lectura</span>
           </div>
+          <div className="article-hero-actions">
+            <DownloadPdf article={article} />
+          </div>
         </div>
       </div>
 
@@ -106,7 +109,7 @@ export default async function ArticlePage({
       <div className="pdf-end">
         <DownloadPdf
           article={article}
-          label="▘ Descargar esta nota como .pdf cifrado"
+          label="Descargar esta nota en PDF"
         />
       </div>
     </article>
