@@ -5,6 +5,7 @@ import { games, getGame } from "@/lib/games";
 import SudokuGame from "@/components/SudokuGame";
 import CrosswordGame from "@/components/CrosswordGame";
 import ChessGame from "@/components/ChessGame";
+import PacmanGame from "@/components/PacmanGame";
 
 export function generateStaticParams() {
   return games.map((g) => ({ game: g.slug }));
@@ -52,6 +53,7 @@ export default async function GamePage({
         {g.slug === "sudoku" ? <SudokuGame /> : null}
         {g.slug === "crucigrama" ? <CrosswordGame /> : null}
         {g.slug === "ajedrez" ? <ChessGame /> : null}
+        {g.slug === "pacman" ? <PacmanGame /> : null}
       </div>
     </div>
   );

@@ -35,6 +35,15 @@ export const games: Game[] = [
     badge: "2P",
     glyph: "♞",
   },
+  {
+    slug: "pacman",
+    title: "Pac-Man",
+    subtitle:
+      "Arcade local con teclado, swipe y botones táctiles. Comé puntos, activá pellets y escapá de los fantasmas.",
+    color: "#ff2ec4",
+    badge: "Arcade",
+    glyph: "●",
+  },
 ];
 
 export function getGame(slug: string): Game | undefined {
