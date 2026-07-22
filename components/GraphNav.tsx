@@ -15,6 +15,7 @@ import {
   categoryColor,
   type Category,
 } from "@/lib/articles";
+import { games } from "@/lib/games";
 
 /* ---------- Relaciones temáticas entre notas (cruces entre galaxias) ---------- */
 const RELATIONS: [string, string][] = [
@@ -29,6 +30,8 @@ const RELATIONS: [string, string][] = [
 ];
 
 const HUB = "#ece8e1";
+const GAMES_COLOR = "#ffe03a";
+type GraphView = "galaxies" | "galaxy" | "games";
 
 /* PRNG determinista para estrellas y cúmulos */
 function mulberry32(seed: number) {
@@ -53,7 +56,7 @@ function angleOfCat(cat: Category): number {
 export default function GraphNav() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"galaxies" | "galaxy">("galaxies");
+  const [view, setView] = useState<GraphView>("galaxies");
   const [active, setActive] = useState<Category>(categories[0]);
   const [size, setSize] = useState({ w: 900, h: 620 });
 
@@ -134,6 +137,10 @@ export default function GraphNav() {
     setView("galaxy");
   }
 
+  function enterGames() {
+    setView("games");
+  }
+
   /* ---------- Vista mapa: todas las galaxias ---------- */
   function GalaxiesLayer() {
     const rx = w * 0.32;
@@ -141,6 +148,8 @@ export default function GraphNav() {
     const coreR = Math.max(7, S * 0.02);
     const clusterR = Math.max(46, S * 0.12);
     const labelF = Math.max(13, S * 0.032);
+    const gamesX = cx;
+    const gamesY = Math.min(h - clusterR * 0.5, cy + ry + clusterR * 0.95);
 
     // conexiones entre galaxias (pares de categorías con relación)
     const pairs = new Set<string>();
@@ -174,6 +183,14 @@ export default function GraphNav() {
               />
             );
           })}
+          <line
+            x1={cx}
+            y1={cy}
+            x2={gamesX}
+            y2={gamesY}
+            strokeWidth={1}
+            opacity={0.8}
+          />
         </g>
         {categories.map((cat) => {
           const { x, y } = pos(cat);
@@ -240,6 +257,66 @@ export default function GraphNav() {
             </g>
           );
         })}
+        <g
+          className="galaxy"
+          transform={`translate(${gamesX} ${gamesY})`}
+          onClick={enterGames}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && enterGames()}
+        >
+          <circle r={clusterR * 0.9} fill="transparent" />
+          <g
+            style={{
+              transformBox: "fill-box",
+              transformOrigin: "center",
+              animation: "gspin 24s linear infinite",
+            }}
+          >
+            {Array.from({ length: 22 }, (_, i) => {
+              const a = (i / 22) * Math.PI * 2;
+              const d = clusterR * (0.22 + (i % 7) * 0.1);
+              return (
+                <circle
+                  key={i}
+                  cx={Math.cos(a) * d}
+                  cy={Math.sin(a) * d}
+                  r={i % 4 === 0 ? 2 : 1.2}
+                  fill={GAMES_COLOR}
+                  opacity={0.75}
+                />
+              );
+            })}
+          </g>
+          <rect
+            x={-coreR * 1.25}
+            y={-coreR * 1.25}
+            width={coreR * 2.5}
+            height={coreR * 2.5}
+            fill={GAMES_COLOR}
+            stroke="#000"
+            strokeWidth={1.5}
+            className="galaxy-core"
+          />
+          <text
+            y={clusterR * 0.9 + labelF}
+            textAnchor="middle"
+            className="galaxy-label"
+            fill={GAMES_COLOR}
+            style={{ fontSize: labelF }}
+          >
+            juegos
+          </text>
+          <text
+            y={clusterR * 0.9 + labelF * 2}
+            textAnchor="middle"
+            className="galaxy-count"
+            fill="#7d7691"
+            style={{ fontSize: labelF * 0.5 }}
+          >
+            {games.length} MODOS
+          </text>
+        </g>
       </g>
     );
   }
@@ -414,6 +491,112 @@ export default function GraphNav() {
     );
   }
 
+  function GamesDetail() {
+    const rx = w * 0.3;
+    const ry = h * 0.25;
+    const gameR = Math.max(13, S * 0.032);
+    const coreR = Math.max(14, S * 0.034);
+    const labelF = Math.max(12, S * 0.028);
+
+    const gamePos = (i: number) => {
+      const ang = (i / games.length) * Math.PI * 2 - Math.PI / 2;
+      return { x: cx + Math.cos(ang) * rx, y: cy + Math.sin(ang) * ry };
+    };
+
+    return (
+      <g className="galaxy-enter" key="games">
+        <g stroke={GAMES_COLOR} opacity={0.35}>
+          {games.map((g, i) => {
+            const p = gamePos(i);
+            return (
+              <line
+                key={g.slug}
+                x1={cx}
+                y1={cy}
+                x2={p.x}
+                y2={p.y}
+                strokeWidth={1.2}
+              />
+            );
+          })}
+        </g>
+
+        <rect
+          x={cx - coreR}
+          y={cy - coreR}
+          width={coreR * 2}
+          height={coreR * 2}
+          fill={GAMES_COLOR}
+          stroke="#000"
+          strokeWidth={2}
+        />
+        <text
+          x={cx}
+          y={cy + coreR + labelF}
+          textAnchor="middle"
+          className="galaxy-label"
+          fill={GAMES_COLOR}
+          style={{ fontSize: labelF }}
+        >
+          juegos
+        </text>
+
+        {games.map((game, i) => {
+          const p = gamePos(i);
+          return (
+            <g
+              key={game.slug}
+              className="note"
+              transform={`translate(${p.x} ${p.y})`}
+              onClick={() => {
+                setOpen(false);
+                router.push(`/juegos/${game.slug}`);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setOpen(false);
+                  router.push(`/juegos/${game.slug}`);
+                }
+              }}
+            >
+              <circle r={gameR * 2.2} fill={game.color} opacity={0.16} />
+              <rect
+                x={-gameR}
+                y={-gameR}
+                width={gameR * 2}
+                height={gameR * 2}
+                fill="#0c0b10"
+                stroke={game.color}
+                strokeWidth={2}
+                className="note-core"
+              />
+              <text
+                y={5}
+                textAnchor="middle"
+                className="note-label"
+                fill={game.color}
+                style={{ fontSize: labelF * 1.05 }}
+              >
+                {game.glyph}
+              </text>
+              <text
+                y={gameR + labelF}
+                textAnchor="middle"
+                className="note-label"
+                fill="#ece8e1"
+                style={{ fontSize: labelF }}
+              >
+                {game.title}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    );
+  }
+
   const starLayer = (
     <g>
       {stars.map((s, i) => (
@@ -458,7 +641,7 @@ export default function GraphNav() {
         >
           <div className="graph-panel">
             <div className="graph-head">
-              {view === "galaxy" ? (
+              {view !== "galaxies" ? (
                 <button
                   className="graph-back"
                   onClick={() => setView("galaxies")}
@@ -469,7 +652,11 @@ export default function GraphNav() {
                 <span className="graph-ja">星図</span>
               )}
               <div className="graph-title">
-                {view === "galaxy" ? `GALAXIA · ${active}` : "MAPA ESTELAR"}
+                {view === "galaxy"
+                  ? `GALAXIA · ${active}`
+                  : view === "games"
+                  ? "GALAXIA · JUEGOS"
+                  : "MAPA ESTELAR"}
               </div>
               <div className="graph-spacer" />
               <button
@@ -488,13 +675,17 @@ export default function GraphNav() {
                 preserveAspectRatio="xMidYMid slice"
               >
                 {starLayer}
-                {view === "galaxies" ? <GalaxiesLayer /> : <GalaxyDetail />}
+                {view === "galaxies" ? <GalaxiesLayer /> : null}
+                {view === "galaxy" ? <GalaxyDetail /> : null}
+                {view === "games" ? <GamesDetail /> : null}
               </svg>
             </div>
 
             <div className="graph-foot">
               {view === "galaxies"
-                ? "Tocá una galaxia para entrar · cada galaxia es un tema"
+                ? "Tocá una galaxia para entrar · juegos abre los modos interactivos"
+                : view === "games"
+                ? "Tocá un juego para entrar · esc para volver"
                 : "Tocá una nota para leer · seguí la línea ↦ para viajar a otra galaxia · esc para volver"}
             </div>
           </div>
