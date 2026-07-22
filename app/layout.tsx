@@ -72,6 +72,7 @@ function Nav() {
           <a href="/#economia">Economía</a>
           <a href="/#teorias">Teorías</a>
           <a href="/#blogs">Blogs</a>
+          <a href="/#juegos">Juegos</a>
         </nav>
         <div className="nav-spacer" />
         <a className="nav-cta" href="/#destacado">

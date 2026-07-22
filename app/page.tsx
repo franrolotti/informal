@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import ArticleCard from "@/components/ArticleCard";
+import GameCard from "@/components/GameCard";
+import { games } from "@/lib/games";
 import {
   byCategory,
   categories,
@@ -65,6 +67,22 @@ export default function Home() {
         <div className="row">
           {novedades.map((a, i) => (
             <ArticleCard key={a.slug} article={a} index={i} />
+          ))}
+        </div>
+      </section>
+
+      <section className="section container" id="juegos">
+        <div className="row-head">
+          <div
+            className="row-title"
+            style={{ "--cat": "#37ff8b" } as CSSProperties}
+          >
+            Juegos <span>puzzles contra el ruido</span>
+          </div>
+        </div>
+        <div className="row">
+          {games.map((g, i) => (
+            <GameCard key={g.slug} game={g} index={i} />
           ))}
         </div>
       </section>
