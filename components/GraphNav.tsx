@@ -10,9 +10,9 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import {
-  articles,
   categories,
   categoryColor,
+  type Article,
   type Category,
 } from "@/lib/articles";
 import { games } from "@/lib/games";
@@ -44,17 +44,25 @@ function mulberry32(seed: number) {
   };
 }
 
-const catOf: Record<string, Category> = Object.fromEntries(
-  articles.map((a) => [a.slug, a.category])
-) as Record<string, Category>;
-
 function angleOfCat(cat: Category): number {
   const i = categories.indexOf(cat);
   return (i / categories.length) * Math.PI * 2 - Math.PI / 2;
 }
 
-export default function GraphNav() {
+// Las notas llegan por prop desde el layout: este componente es de cliente y
+// los datos ahora vienen de Supabase, que solo se consulta en el server.
+export default function GraphNav({ articles }: { articles: Article[] }) {
   const router = useRouter();
+
+  const catOf = useMemo(
+    () =>
+      Object.fromEntries(articles.map((a) => [a.slug, a.category])) as Record<
+        string,
+        Category
+      >,
+    [articles],
+  );
+
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<GraphView>("galaxies");
   const [active, setActive] = useState<Category>(categories[0]);

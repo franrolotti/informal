@@ -3,13 +3,16 @@ import ArticleCard from "@/components/ArticleCard";
 import GameCard from "@/components/GameCard";
 import { games } from "@/lib/games";
 import {
-  byCategory,
   categories,
   categoryAnchors,
   categoryColor,
+  getArticles,
   getFeatured,
-  getLatest,
 } from "@/lib/articles";
+
+// Las notas vienen de Supabase. Con revalidación cada minuto, publicar o
+// retirar una nota se ve en el sitio sin necesidad de redeploy.
+export const revalidate = 60;
 
 function formatDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("es-AR", {
@@ -19,9 +22,27 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function Home() {
-  const featured = getFeatured();
-  const novedades = getLatest(8);
+export default async function Home() {
+  const todas = await getArticles();
+  const featured = await getFeatured();
+  const novedades = todas.slice(0, 8);
+
+  // Antes del primer sync la base está vacía; mejor un cartel que un crash.
+  if (!featured) {
+    return (
+      <section className="section container" id="destacado">
+        <div className="row-head">
+          <div className="row-title">
+            Sin transmisión <span>todavía no hay notas publicadas</span>
+          </div>
+        </div>
+        <p className="hero-sub">
+          Cuando el vault sincronice sus notas con Supabase, aparecen acá.
+        </p>
+      </section>
+    );
+  }
+
   const heroStyle = {
     "--cat": categoryColor[featured.category],
   } as CSSProperties;
@@ -88,7 +109,7 @@ export default function Home() {
       </section>
 
       {categories.map((cat) => {
-        const list = byCategory(cat);
+        const list = todas.filter((a) => a.category === cat);
         if (list.length === 0) return null;
         return (
           <section

@@ -2,14 +2,21 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
-  articles,
   categoryColor,
   getArticle,
+  getArticles,
   type Block,
 } from "@/lib/articles";
 import DownloadPdf from "@/components/DownloadPdf";
 
-export function generateStaticParams() {
+export const revalidate = 60;
+
+// Una nota publicada después del build todavía no tiene su ruta pregenerada:
+// dynamicParams la renderiza en la primera visita en vez de dar 404.
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const articles = await getArticles();
   return articles.map((a) => ({ slug: a.slug }));
 }
 
@@ -19,7 +26,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getArticle(slug);
   if (!article) return { title: "No encontrado — Informal" };
   return {
     title: `${article.title} — Informal`,
@@ -65,7 +72,7 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getArticle(slug);
   if (!article) notFound();
 
   const style = {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Press_Start_2P, Anton, Space_Mono, DotGothic16 } from "next/font/google";
 import GraphNav from "@/components/GraphNav";
+import { getArticles } from "@/lib/articles";
 import "./globals.css";
 
 const arcade = Press_Start_2P({
@@ -42,7 +43,7 @@ function Logo() {
       <span className="brand-word">
         info<span className="brand-dot">.</span>rmal
       </span>
-      <span className="brand-sub">▲ 1UP · ANARCHO PRESS</span>
+      <span className="brand-sub">▲ 1UP · PRESS</span>
     </a>
   );
 }
@@ -106,11 +107,15 @@ function Footer() {
   );
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // El mapa estelar necesita el catálogo, y es un componente de cliente:
+  // se lo pasamos ya resuelto desde el server.
+  const articles = await getArticles();
+
   return (
     <html
       lang="es"
@@ -121,7 +126,7 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
-        <GraphNav />
+        <GraphNav articles={articles} />
       </body>
     </html>
   );
