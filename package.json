@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "chess.js": "^1.4.0",
     "jspdf": "2.5.2",
     "next": "15.1.11",
     "react": "19.0.0",

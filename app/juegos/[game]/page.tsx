@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { games, getGame } from "@/lib/games";
 import SudokuGame from "@/components/SudokuGame";
 import CrosswordGame from "@/components/CrosswordGame";
+import ChessGame from "@/components/ChessGame";
 
 export function generateStaticParams() {
   return games.map((g) => ({ game: g.slug }));
@@ -50,6 +51,7 @@ export default async function GamePage({
       <div className="game-arena reveal" style={{ animationDelay: "120ms" }}>
         {g.slug === "sudoku" ? <SudokuGame /> : null}
         {g.slug === "crucigrama" ? <CrosswordGame /> : null}
+        {g.slug === "ajedrez" ? <ChessGame /> : null}
       </div>
     </div>
   );

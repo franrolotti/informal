@@ -26,6 +26,15 @@ export const games: Game[] = [
     badge: "Palabras",
     glyph: "#",
   },
+  {
+    slug: "ajedrez",
+    title: "Ajedrez",
+    subtitle:
+      "Jugá con blancas contra un modelo barato de OpenAI. La partida muestra el costo acumulado jugada por jugada.",
+    color: "#ffe03a",
+    badge: "IA",
+    glyph: "♞",
+  },
 ];
 
 export function getGame(slug: string): Game | undefined {
